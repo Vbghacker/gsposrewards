@@ -79,32 +79,60 @@
       border: 1px solid rgba(212,175,55,0.4);
     }
 
+    /* Clean 1-Page Print Styles */
+    @page {
+      size: A4 portrait;
+      margin: 10mm 0mm;
+    }
     @media print {
-      body * {
-        visibility: hidden;
+      html, body {
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #FFFFFF !important;
+        overflow: hidden !important;
       }
-      #printable-membership-card, #printable-membership-card * {
-        visibility: visible;
+      header, footer, nav, section, form, table, #view-pos, .toast-animate, button, #toast-container {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      main, #view-customer, .grid, .lg\:col-span-7, #card-wrapper {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+      }
+      .lg\:col-span-5 {
+        display: none !important;
       }
       #printable-membership-card {
-        position: fixed;
-        left: 50%;
-        top: 15%;
-        transform: translate(-50%, 0);
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+        margin: 40px auto 0 auto !important;
         width: 420px !important;
+        max-width: 420px !important;
         box-shadow: none !important;
         border: 2px solid #111 !important;
         color: #111 !important;
         background: #FFFFFF !important;
-        padding: 24px;
-        border-radius: 16px;
+        padding: 24px !important;
+        border-radius: 18px !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      #printable-membership-card * {
+        visibility: visible !important;
       }
       #printable-membership-card .print-invert {
-        color: #111 !important;
+        color: #111111 !important;
       }
       #printable-membership-card .print-bg-light {
-        background: #F9F9F9 !important;
-        border: 1px solid #CCC !important;
+        background: #F8F8F8 !important;
+        border: 1px solid #CCCCCC !important;
       }
     }
 
@@ -198,17 +226,40 @@
     <div id="view-customer" class="space-y-8">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Left: Customer Form / Selector -->
+        <!-- Left: Customer Form, Search & Selector -->
         <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6" data-aos="fade-up" data-aos-duration="600">
           <div class="border-b border-stone-100 pb-4">
             <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900">Store Membership</h2>
-            <p class="text-stone-500 text-xs sm:text-sm mt-1">Issue a unique Ganapathi Cloth Store loyalty card with custom Barcode and QR Code.</p>
+            <p class="text-stone-500 text-xs sm:text-sm mt-1">Search, issue, and manage Ganapathi Cloth Store loyalty cards.</p>
           </div>
 
-          <div class="space-y-2">
-            <label class="text-xs font-semibold uppercase tracking-wider text-stone-500">Active Member Card:</label>
-            <select id="customer-dropdown" onchange="onCustomerSelect(this.value)" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-boutique-gold transition-all">
-            </select>
+          <!-- Quick Search & Select Member Section -->
+          <div class="space-y-2.5 bg-stone-50 p-4 rounded-2xl border border-stone-200">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-magnifying-glass text-boutique-gold text-xs"></i>
+                <span>Search & Select Member:</span>
+              </label>
+              <span id="search-match-count" class="text-[10px] text-stone-400 font-mono">All members</span>
+            </div>
+
+            <!-- Search Input -->
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-stone-400 text-xs">
+                <i class="fa-solid fa-search"></i>
+              </span>
+              <input type="text" id="member-search-input" oninput="filterMembersList(this.value)" placeholder="Type Name, Mobile (+91), or Card ID..." 
+                class="w-full pl-9 pr-8 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold">
+              <button onclick="clearMemberSearch()" type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-700 text-xs">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <!-- Member Dropdown -->
+            <div class="space-y-1 pt-1">
+              <select id="customer-dropdown" onchange="onCustomerSelect(this.value)" class="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-boutique-gold transition-all">
+              </select>
+            </div>
           </div>
 
           <div class="relative flex items-center justify-center my-3">
@@ -300,17 +351,17 @@
                 </div>
               </div>
 
-              <!-- Card Center Row: Cardholder Details & QR -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center my-6">
-                <div>
-                  <span class="text-[11px] uppercase tracking-wider text-stone-400">Cardholder Name</span>
-                  <h4 id="card-holder-name" class="font-serif text-2xl font-semibold tracking-wide print-invert truncate text-stone-100 mt-0.5">No User Selected</h4>
-                  <p id="card-holder-phone" class="text-xs text-stone-300 font-mono mt-1">+91 ---------</p>
+              <!-- Card Center Row: FULL NAME (NO TRUNCATION / NO GLITCH) -->
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 my-6">
+                <div class="flex-1 pr-2 max-w-[250px]">
+                  <span class="text-[11px] uppercase tracking-wider text-stone-400 block font-medium">Cardholder Name</span>
+                  <h4 id="card-holder-name" class="font-serif text-xl sm:text-2xl font-bold tracking-wide print-invert text-stone-100 mt-1 break-words leading-tight">No User Selected</h4>
+                  <p id="card-holder-phone" class="text-xs text-stone-300 font-mono mt-1 tracking-wider">+91 ---------</p>
                 </div>
 
                 <!-- QR Code Box -->
-                <div class="flex flex-col items-center sm:items-end justify-center">
-                  <div class="bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center transform hover:scale-105 transition-transform">
+                <div class="flex flex-col items-center sm:items-end justify-center flex-shrink-0 self-center sm:self-auto">
+                  <div class="bg-white p-2.5 rounded-2xl shadow-xl flex items-center justify-center">
                     <div id="card-qrcode"></div>
                   </div>
                   <span class="text-xs text-boutique-gold mt-2 font-mono tracking-widest text-center font-bold" id="card-id-label">GCS-000000</span>
@@ -326,7 +377,7 @@
             </div>
           </div>
 
-          <!-- Card Management Actions (PNG Download, WhatsApp, Print, POS, Edit, Delete) -->
+          <!-- Card Management Actions (PNG Download, Direct WhatsApp, Print, POS, Edit, Delete) -->
           <div class="flex flex-wrap items-center gap-2.5">
             <button onclick="downloadCardAsPNG()" class="flex-1 min-w-[130px] px-3.5 py-3 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-900 shadow-sm flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5">
               <i class="fa-solid fa-file-image text-boutique-gold"></i>
@@ -340,7 +391,7 @@
 
             <button onclick="window.print()" class="px-3.5 py-3 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 shadow-sm flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5">
               <i class="fa-solid fa-print text-stone-500"></i>
-              <span>Print</span>
+              <span>Print PDF</span>
             </button>
 
             <button onclick="testQuickScanInPOS()" class="px-3.5 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:-translate-y-0.5">
@@ -413,7 +464,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <!-- Left: QR Scanner & Manual Input -->
+        <!-- Left: QR Scanner & Pre-fixed Manual Input -->
         <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6" data-aos="fade-right">
           <div class="flex justify-between items-center">
             <h3 class="font-serif text-lg font-bold text-stone-900">Scan Member Card</h3>
@@ -433,19 +484,27 @@
             </div>
           </div>
 
-          <!-- Manual ID Search -->
+          <!-- Manual ID Search with Pre-fixed GCS- -->
           <div class="space-y-3 pt-2 border-t border-stone-100">
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-500">Barcode Gun / Manual Entry</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-500">Quick Card ID or Phone Search</label>
               <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 <i class="fa-solid fa-barcode text-[11px] mr-1"></i> Gun Reader Ready
               </span>
             </div>
-            <div class="flex gap-2">
-              <input type="text" id="manual-card-id" placeholder="Scan with barcode gun or type ID / Mobile..." 
-                class="flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold uppercase font-mono">
+            
+            <div class="flex gap-2 items-center">
+              <div class="relative flex-1 flex items-center bg-stone-50 border border-stone-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-boutique-gold">
+                <!-- Pre-typed GCS- prefix badge -->
+                <span class="pl-3.5 pr-1.5 py-3 bg-stone-100/90 text-stone-600 font-mono text-xs sm:text-sm font-bold border-r border-stone-200 select-none">
+                  GCS-
+                </span>
+                <input type="text" id="manual-card-id" placeholder="60421 or 10-digit mobile..." 
+                  class="w-full px-3 py-3 bg-transparent text-sm focus:outline-none uppercase font-mono tracking-wider">
+              </div>
+
               <button onclick="lookupManualCard()" 
-                class="px-5 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 shadow hover:-translate-y-0.5">
+                class="px-5 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 shadow hover:-translate-y-0.5 flex-shrink-0">
                 <i class="fa-solid fa-magnifying-glass text-boutique-gold text-xs"></i>
                 <span>Fetch</span>
               </button>
@@ -649,7 +708,6 @@
   <!-- JAVASCRIPT APPLICATION LOGIC                   -->
   <!-- ============================================== -->
   <script>
-    // Initialize Animate On Scroll (AOS)
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof AOS !== 'undefined') {
         AOS.init({
@@ -661,9 +719,6 @@
       }
     });
 
-    // -----------------------------------------------------------------
-    // FIREBASE CONFIGURATION
-    // -----------------------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyANAG6uuztUARLyZwcIJotvB9ri87M_mQs",
       authDomain: "ganapathi-cloth-store.firebaseapp.com",
@@ -753,7 +808,6 @@
       }
     });
 
-    // Cloud Real-time Listener
     function setupCloudListener() {
       db.collection("members").onSnapshot((snapshot) => {
         const cloudMembers = [];
@@ -766,7 +820,13 @@
           return;
         }
 
-        renderCustomerDropdown();
+        const searchInput = document.getElementById('member-search-input');
+        if (searchInput && searchInput.value.trim() !== '') {
+          filterMembersList(searchInput.value);
+        } else {
+          renderCustomerDropdown();
+        }
+
         renderQuickLookupChips();
 
         const activeId = currentCustomerId || customers[0].id;
@@ -862,19 +922,55 @@
       }
     }
 
-    function renderCustomerDropdown() {
+    function filterMembersList(searchTerm) {
+      const term = (searchTerm || '').trim().toLowerCase();
+      const countLabel = document.getElementById('search-match-count');
+      
+      const filtered = customers.filter(c => {
+        const nameMatch = (c.name || '').toLowerCase().includes(term);
+        const phoneMatch = (c.phone || '').includes(term);
+        const idMatch = (c.id || '').toLowerCase().includes(term);
+        return nameMatch || phoneMatch || idMatch;
+      });
+
+      if (countLabel) {
+        countLabel.textContent = term ? `${filtered.length} matching` : `${customers.length} members`;
+      }
+
+      renderCustomerDropdown(filtered);
+
+      if (filtered.length > 0 && term) {
+        setActiveCustomer(filtered[0].id);
+      }
+    }
+
+    function clearMemberSearch() {
+      const input = document.getElementById('member-search-input');
+      if (input) input.value = '';
+      filterMembersList('');
+    }
+
+    function renderCustomerDropdown(listToRender = customers) {
       const select = document.getElementById('customer-dropdown');
       if (!select) return;
       select.innerHTML = '';
       
-      customers.forEach(cust => {
+      if (listToRender.length === 0) {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = 'No matching member found';
+        select.appendChild(emptyOpt);
+        return;
+      }
+
+      listToRender.forEach(cust => {
         const opt = document.createElement('option');
         opt.value = cust.id;
-        opt.textContent = `${cust.name} (${cust.id}) - ${cust.points} Points`;
+        opt.textContent = `${cust.name} (${cust.phone}) • ${cust.id} • ${cust.points} Pts`;
         select.appendChild(opt);
       });
 
-      if (currentCustomerId) {
+      if (currentCustomerId && listToRender.some(c => c.id === currentCustomerId)) {
         select.value = currentCustomerId;
       }
     }
@@ -895,7 +991,7 @@
     }
 
     function onCustomerSelect(id) {
-      setActiveCustomer(id);
+      if (id) setActiveCustomer(id);
     }
 
     function setActiveCustomer(id) {
@@ -910,7 +1006,9 @@
       document.getElementById('card-id-label').textContent = cust.id;
       
       const select = document.getElementById('customer-dropdown');
-      if (select) select.value = cust.id;
+      if (select && Array.from(select.options).some(o => o.value === cust.id)) {
+        select.value = cust.id;
+      }
 
       requestAnimationFrame(() => renderCardCodes(cust.id));
       renderCustomerHistoryTable(cust);
@@ -927,8 +1025,8 @@
         try {
           new QRCode(qrContainer, {
             text: cardId,
-            width: 105,
-            height: 105,
+            width: 100,
+            height: 100,
             colorDark: "#111112",
             colorLight: "#FFFFFF",
             correctLevel: QRCode.CorrectLevel.M
@@ -944,7 +1042,7 @@
           JsBarcode(barcodeEl, String(cardId).trim(), {
             format: "CODE128",
             lineColor: "#111112",
-            width: 2.2,
+            width: 2.1,
             height: 48,
             displayValue: true,
             fontSize: 13,
@@ -1030,6 +1128,7 @@
       customers.unshift(newCust);
       await persistCustomer(newCust);
 
+      clearMemberSearch();
       renderCustomerDropdown();
       renderQuickLookupChips();
       setActiveCustomer(newCust.id);
@@ -1041,9 +1140,6 @@
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
     }
 
-    // -------------------------------------------------------------
-    // DOWNLOAD CARD AS PNG
-    // -------------------------------------------------------------
     async function downloadCardAsPNG() {
       const cardElement = document.getElementById('printable-membership-card');
       const cust = customers.find(c => c.id === currentCustomerId);
@@ -1057,10 +1153,11 @@
 
       try {
         const canvas = await html2canvas(cardElement, {
-          scale: 3,
+          scale: 2.5,
           backgroundColor: null,
           useCORS: true,
-          logging: false
+          logging: false,
+          allowTaint: true
         });
 
         const link = document.createElement('a');
@@ -1078,9 +1175,6 @@
       }
     }
 
-    // -------------------------------------------------------------
-    // SEND CARD TO MEMBER VIA WHATSAPP (CLIPBOARD + AUTO-DOWNLOAD)
-    // -------------------------------------------------------------
     async function sendCardViaWhatsApp() {
       const cust = customers.find(c => c.id === currentCustomerId);
       if (!cust) {
@@ -1094,90 +1188,23 @@
         return;
       }
 
-      const cardElement = document.getElementById('printable-membership-card');
-      if (!cardElement) return;
+      await downloadCardAsPNG();
 
-      showToast('Generating card image...', 'info');
+      const message = 
+        `*Ganapathi Cloth Store (Estd: 2019)*\n` +
+        `*Privilege Member Digital Card*\n\n` +
+        `Hello *${cust.name}*,\n` +
+        `Here is your official Privilege Club Loyalty Card!\n\n` +
+        `💳 *Card ID:* ${cust.id}\n` +
+        `🪙 *Available Points:* ${cust.points} pts (Value: ₹${cust.points})\n\n` +
+        `✨ *Reward Scheme:* Earn 25 points on every ₹500 purchase. Redeem anytime for instant cash discounts!\n\n` +
+        `_(Please save this card image to scan at our cash counter)_`;
 
-      try {
-        const canvas = await html2canvas(cardElement, {
-          scale: 2.5,
-          backgroundColor: null,
-          useCORS: true,
-          logging: false
-        });
-
-        const safeName = cust.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `Ganapathi_Loyalty_Card_${cust.id}_${safeName}.png`;
-
-        // 1. Mobile Web Share API (Direct attach on supported phones)
-        if (navigator.canShare) {
-          try {
-            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-            const file = new File([blob], fileName, { type: 'image/png' });
-            if (navigator.canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: 'Ganapathi Cloth Store Member Card',
-                text: `Privilege Member Card for ${cust.name} (ID: ${cust.id})`
-              });
-              showToast('Shared successfully!', 'success');
-              return;
-            }
-          } catch (shareErr) {
-            console.warn('Native share skipped:', shareErr);
-          }
-        }
-
-        // 2. Desktop: Try writing directly to system clipboard before opening new window
-        let copiedToClipboard = false;
-        try {
-          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-          const item = new ClipboardItem({ 'image/png': blob });
-          await navigator.clipboard.write([item]);
-          copiedToClipboard = true;
-        } catch (clipErr) {
-          console.warn('Clipboard write permission denied or blocked:', clipErr);
-        }
-
-        // 3. Auto-download PNG so you have the image file ready immediately
-        const dataUrl = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.download = fileName;
-        downloadLink.href = dataUrl;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-
-        // 4. Construct WhatsApp Message and Open Chat
-        const message = 
-          `*Ganapathi Cloth Store (Estd: 2019)*\n` +
-          `*Privilege Member Digital Card*\n\n` +
-          `Hello *${cust.name}*,\n` +
-          `Here is your official Privilege Club Loyalty Card!\n\n` +
-          `💳 *Card ID:* ${cust.id}\n` +
-          `🪙 *Available Points:* ${cust.points} pts (Value: ₹${cust.points})\n\n` +
-          `✨ *Reward Scheme:* Earn 25 points on every ₹500 purchase. Redeem anytime for cash discounts!\n\n` +
-          `_(Please save this card image to scan at our billing counter)_`;
-
-        const waUrl = `https://web.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(message)}`;
-        window.open(waUrl, '_blank');
-
-        if (copiedToClipboard) {
-          showToast('Image copied to clipboard! Press Ctrl+V in the WhatsApp chat.', 'success');
-        } else {
-          showToast('Card downloaded! Drag and drop the downloaded file into WhatsApp chat.', 'info');
-        }
-
-      } catch (err) {
-        console.error('WhatsApp dispatch error:', err);
-        showToast('Failed to generate card image.', 'error');
-      }
+      const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+      showToast('WhatsApp opened! Send message and attach downloaded card.', 'info');
     }
 
-    // -------------------------------------------------------------
-    // UPDATE & DELETE MEMBER LOGIC
-    // -------------------------------------------------------------
     function openEditMemberModal() {
       const cust = customers.find(c => c.id === currentCustomerId);
       if (!cust) return showToast('No member selected to edit', 'error');
@@ -1270,24 +1297,30 @@
       loadCardToPOS(currentCustomerId);
     }
 
-    // POS Terminal Logic
+    // -------------------------------------------------------------
+    // POS TERMINAL LOGIC (SUPPORTS TYPING JUST NUMBER OR FULL ID)
+    // -------------------------------------------------------------
     function lookupManualCard() {
       const inputEl = document.getElementById('manual-card-id');
       if (!inputEl) return;
-      const query = inputEl.value.trim().toUpperCase();
+      const rawQuery = inputEl.value.trim().toUpperCase();
 
-      if (!query) {
-        showToast('Please enter or scan a Card ID or Mobile Number', 'error');
+      if (!rawQuery) {
+        showToast('Please enter a card number or 10-digit mobile', 'error');
         inputEl.focus();
         return;
       }
 
+      // Check if user entered just digits, full GCS-ID, or phone number
+      const queryWithPrefix = rawQuery.startsWith('GCS-') ? rawQuery : `GCS-${rawQuery}`;
+
       const found = customers.find(c => {
         const idClean = c.id.toUpperCase();
         const phoneClean = c.phone.trim();
-        return idClean === query || 
-               phoneClean === query ||
-               idClean.replace(/[^0-9]/g, '') === query.replace(/[^0-9]/g, '');
+        return idClean === queryWithPrefix || 
+               idClean === rawQuery ||
+               phoneClean === rawQuery ||
+               idClean.replace(/[^0-9]/g, '') === rawQuery.replace(/[^0-9]/g, '');
       });
 
       if (found) {
@@ -1295,7 +1328,7 @@
         inputEl.value = '';
         showToast(`Found Member: ${found.name}`, 'success');
       } else {
-        showToast(`No member found matching "${query}"`, 'error');
+        showToast(`No member found for "${rawQuery}"`, 'error');
         inputEl.select();
       }
     }
@@ -1492,7 +1525,6 @@
       showToast(`Successfully redeemed ₹${pointsToRedeem} cash discount!`, 'success');
     }
 
-    // Camera Scanner
     function toggleCameraScanner() {
       if (isCameraRunning) stopCameraScanner();
       else startCameraScanner();
@@ -1573,7 +1605,6 @@
       }
     }
 
-    // CSV Exporter
     function exportMembersToCSV() {
       if (!customers || customers.length === 0) {
         showToast('No customer data available to export', 'error');
@@ -1628,7 +1659,6 @@
       showToast('Member records downloaded as CSV!', 'success');
     }
 
-    // Toast Notifications
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
