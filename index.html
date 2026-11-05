@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ganapathi Cloth Store | Rewards & Cashier POS</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Great+Vibes&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- AOS (Animate On Scroll) -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- HTML2Canvas (for Card PNG Export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- QR Code and Barcode Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <!-- HTML5 QR / Barcode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Canvas Confetti for Reward Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase Compat Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Cinzel"', 'serif'],
+            script: ['"Great Vibes"', 'cursive'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            boutique: {
+              cream: '#FDFCF7',
+              sand: '#F5EFE6',
+              charcoal: '#121212',
+              darkcard: '#18181A',
+              gold: '#D4AF37',
+              goldHover: '#C59E2B',
+              goldLight: '#F3E5AB',
+              accent: '#8B0000',
+              rubyLight: '#9E1B32'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #F8F6F2;
+      color: #1A1818;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    .luxury-card {
+      background: radial-gradient(circle at 15% 20%, #242426 0%, #111112 100%);
+      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(212, 175, 55, 0.35);
+    }
+
+    .shimmer-badge {
+      background: linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 100%);
+      border: 1px solid rgba(212,175,55,0.4);
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-membership-card, #printable-membership-card * {
+        visibility: visible;
+      }
+      #printable-membership-card {
+        position: fixed;
+        left: 50%;
+        top: 15%;
+        transform: translate(-50%, 0);
+        width: 420px !important;
+        box-shadow: none !important;
+        border: 2px solid #111 !important;
+        color: #111 !important;
+        background: #FFFFFF !important;
+        padding: 24px;
+        border-radius: 16px;
+      }
+      #printable-membership-card .print-invert {
+        color: #111 !important;
+      }
+      #printable-membership-card .print-bg-light {
+        background: #F9F9F9 !important;
+        border: 1px solid #CCC !important;
+      }
+    }
+
+    .toast-animate {
+      animation: slideInDown 0.3s ease-out forwards;
+    }
+    @keyframes slideInDown {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-boutique-gold selection:text-white">
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-0 z-40 transition-all shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-22 py-3 flex items-center justify-between">
+      
+      <!-- Brand Logo & Name -->
+      <div class="flex items-center gap-3 sm:gap-4" data-aos="fade-right">
+        <div class="w-14 h-14 rounded-full flex-shrink-0 shadow-md transform hover:rotate-6 transition-transform">
+          <svg class="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="94" stroke="#121212" stroke-width="3" stroke-dasharray="2 0"/>
+            <circle cx="100" cy="100" r="86" stroke="#121212" stroke-width="1.5"/>
+            <circle cx="100" cy="100" r="76" fill="#121212"/>
+            <circle cx="100" cy="100" r="74" stroke="#D4AF37" stroke-width="1.5" stroke-opacity="0.8"/>
+            <defs>
+              <path id="textPathTop" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>
+              <path id="textPathBottom" d="M 175,100 A 75,75 0 0,1 25,100" fill="none"/>
+            </defs>
+            <text font-family="'Cinzel', serif" font-size="11" font-weight="700" fill="#121212" letter-spacing="3">
+              <textPath href="#textPathTop" startOffset="50%" text-anchor="middle">ESTD: 2019</textPath>
+            </text>
+            <text font-family="'Cinzel', serif" font-size="9" font-weight="700" fill="#121212" letter-spacing="1.5">
+              <textPath href="#textPathBottom" startOffset="50%" text-anchor="middle">GANAPATHI CLOTH STORE</textPath>
+            </text>
+            <text x="100" y="118" font-family="'Great Vibes', cursive" font-size="62" fill="#FFFFFF" text-anchor="middle" font-weight="400">gs</text>
+          </svg>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-serif text-lg sm:text-2xl font-bold tracking-wider text-stone-900 uppercase">Ganapathi Cloth Store</h1>
+          </div>
+          <p class="text-[11px] font-semibold text-stone-500 tracking-widest uppercase flex items-center gap-2">
+            <span>Estd: 2019</span>
+            <span class="inline-block w-1 h-1 rounded-full bg-boutique-gold"></span>
+            <span class="text-boutique-gold font-bold">Privilege Club</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="flex items-center bg-stone-100 p-1.5 rounded-2xl border border-stone-200" data-aos="fade-left">
+        <button id="btn-mode-customer" onclick="switchMode('customer')" 
+          class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 bg-white text-boutique-charcoal shadow-sm">
+          <i class="fa-solid fa-address-card text-boutique-gold"></i>
+          <span class="hidden xs:inline">Member Card</span>
+        </button>
+        <button id="btn-mode-pos" onclick="switchMode('pos')" 
+          class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-stone-500 hover:text-stone-900">
+          <i class="fa-solid fa-cash-register"></i>
+          <span class="hidden xs:inline">Billing POS</span>
+        </button>
+      </div>
+      
+    </div>
+  </header>
+
+  <!-- Rule Highlight Banner -->
+  <section class="bg-stone-900 text-white border-b border-boutique-gold/30 py-2.5 px-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between text-xs sm:text-sm gap-2">
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-0.5 rounded-full bg-boutique-gold text-stone-900 text-[11px] font-bold uppercase tracking-wider">Reward Program</span>
+        <span class="font-light text-stone-300">Every <strong class="text-white font-bold">₹500</strong> Purchase = <strong class="text-boutique-gold font-bold">25 Credit Points</strong></span>
+      </div>
+      <div class="flex items-center gap-2 text-stone-300">
+        <i class="fa-solid fa-coins text-boutique-gold"></i>
+        <span><strong>1 Point = ₹1.00</strong> instant cash discount on any purchase</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- VIEW 1: CUSTOMER PORTAL -->
+    <div id="view-customer" class="space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left: Customer Form / Selector -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6" data-aos="fade-up" data-aos-duration="600">
+          <div class="border-b border-stone-100 pb-4">
+            <h2 class="font-serif text-xl sm:text-2xl font-bold text-stone-900">Store Membership</h2>
+            <p class="text-stone-500 text-xs sm:text-sm mt-1">Issue a unique Ganapathi Cloth Store loyalty card with custom Barcode and QR Code.</p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-wider text-stone-500">Active Member Card:</label>
+            <select id="customer-dropdown" onchange="onCustomerSelect(this.value)" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-boutique-gold transition-all">
+            </select>
+          </div>
+
+          <div class="relative flex items-center justify-center my-3">
+            <div class="border-t border-stone-200 w-full"></div>
+            <span class="bg-white px-3 text-xs uppercase tracking-widest text-stone-400 font-semibold">Or Register New Member</span>
+          </div>
+
+          <!-- Registration Form -->
+          <form id="reg-form" onsubmit="handleRegistration(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">Customer Full Name</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input type="text" id="reg-name" required placeholder="e.g. Ramesh Kumar" 
+                  class="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">Mobile Number (10 Digits)</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400 font-medium text-xs">+91</span>
+                <input type="tel" id="reg-phone" pattern="[0-9]{10}" required placeholder="9845012345" 
+                  class="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold">
+              </div>
+            </div>
+
+            <button type="submit" 
+              class="w-full py-3.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 transform active:scale-95">
+              <i class="fa-solid fa-id-card text-boutique-gold"></i>
+              <span>Generate Loyalty Pass</span>
+            </button>
+          </form>
+
+          <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-600 space-y-2 border border-stone-100">
+            <div class="font-semibold text-stone-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check text-boutique-gold"></i>
+              How It Works at Ganapathi Cloth Store
+            </div>
+            <p>1. Present this QR or Barcode at billing.</p>
+            <p>2. Earn <strong>25 points</strong> on every <strong>₹500</strong> billed.</p>
+            <p>3. Redeem points anytime as cash discount (1 Pt = ₹1).</p>
+          </div>
+        </div>
+
+        <!-- Right: Digital Membership Card Display & Actions -->
+        <div class="lg:col-span-7 space-y-6" data-aos="fade-up" data-aos-duration="800">
+          
+          <!-- PHYSICAL / DIGITAL PASS CARD -->
+          <div id="card-wrapper" class="relative group">
+            <div id="printable-membership-card" class="luxury-card text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300 hover:shadow-2xl">
+              
+              <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full border-[18px] border-boutique-gold/10 pointer-events-none"></div>
+              <div class="absolute -left-16 -bottom-16 w-48 h-48 rounded-full border-[12px] border-white/5 pointer-events-none"></div>
+              
+              <!-- Card Top Row -->
+              <div class="flex justify-between items-start mb-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-white p-0.5 shadow-md flex-shrink-0">
+                    <svg class="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="100" cy="100" r="94" stroke="#121212" stroke-width="4"/>
+                      <circle cx="100" cy="100" r="86" stroke="#121212" stroke-width="2"/>
+                      <circle cx="100" cy="100" r="76" fill="#121212"/>
+                      <circle cx="100" cy="100" r="74" stroke="#D4AF37" stroke-width="2"/>
+                      <defs>
+                        <path id="cardLogoTop" d="M 30,100 A 70,70 0 0,1 170,100" fill="none"/>
+                        <path id="cardLogoBottom" d="M 175,100 A 75,75 0 0,1 25,100" fill="none"/>
+                      </defs>
+                      <text font-family="'Cinzel', serif" font-size="11" font-weight="700" fill="#121212" letter-spacing="2.5">
+                        <textPath href="#cardLogoTop" startOffset="50%" text-anchor="middle">ESTD: 2019</textPath>
+                      </text>
+                      <text font-family="'Cinzel', serif" font-size="9" font-weight="700" fill="#121212" letter-spacing="1.2">
+                        <textPath href="#cardLogoBottom" startOffset="50%" text-anchor="middle">GANAPATHI CLOTH STORE</textPath>
+                      </text>
+                      <text x="100" y="118" font-family="'Great Vibes', cursive" font-size="62" fill="#FFFFFF" text-anchor="middle">gs</text>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="font-serif text-lg sm:text-xl font-bold tracking-wide text-white print-invert">GANAPATHI CLOTH STORE</h3>
+                    <div class="text-[10px] tracking-[0.25em] uppercase text-boutique-gold font-bold">Privilege Member Card • Estd: 2019</div>
+                  </div>
+                </div>
+                
+                <div class="px-3 py-1 rounded-full shimmer-badge text-boutique-gold text-xs font-semibold tracking-wider uppercase flex items-center gap-1.5 flex-shrink-0">
+                  <i class="fa-solid fa-crown text-[10px]"></i>
+                  <span>VIP Member</span>
+                </div>
+              </div>
+
+              <!-- Card Center Row: Cardholder Details & QR -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center my-6">
+                <div>
+                  <span class="text-[11px] uppercase tracking-wider text-stone-400">Cardholder Name</span>
+                  <h4 id="card-holder-name" class="font-serif text-2xl font-semibold tracking-wide print-invert truncate text-stone-100 mt-0.5">No User Selected</h4>
+                  <p id="card-holder-phone" class="text-xs text-stone-300 font-mono mt-1">+91 ---------</p>
+                </div>
+
+                <!-- QR Code Box -->
+                <div class="flex flex-col items-center sm:items-end justify-center">
+                  <div class="bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center transform hover:scale-105 transition-transform">
+                    <div id="card-qrcode"></div>
+                  </div>
+                  <span class="text-xs text-boutique-gold mt-2 font-mono tracking-widest text-center font-bold" id="card-id-label">GCS-000000</span>
+                </div>
+              </div>
+
+              <!-- Barcode element -->
+              <div class="mt-6 pt-4 border-t border-stone-800 flex flex-col items-center bg-white rounded-2xl p-3 print-bg-light">
+                <svg id="card-barcode" class="w-full max-h-16 overflow-visible"></svg>
+                <div class="text-[10px] text-stone-700 font-mono tracking-widest mt-1 font-semibold uppercase">Scan at Ganapathi Cloth Store Cash Counter</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Card Management Actions (PNG Download, WhatsApp, Print, POS, Edit, Delete) -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="downloadCardAsPNG()" class="flex-1 min-w-[130px] px-3.5 py-3 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-900 shadow-sm flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5">
+              <i class="fa-solid fa-file-image text-boutique-gold"></i>
+              <span>Download PNG</span>
+            </button>
+            
+            <button onclick="sendCardViaWhatsApp()" class="flex-1 min-w-[130px] px-3.5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5">
+              <i class="fa-brands fa-whatsapp text-sm"></i>
+              <span>Send on WhatsApp</span>
+            </button>
+
+            <button onclick="window.print()" class="px-3.5 py-3 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 shadow-sm flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5">
+              <i class="fa-solid fa-print text-stone-500"></i>
+              <span>Print</span>
+            </button>
+
+            <button onclick="testQuickScanInPOS()" class="px-3.5 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:-translate-y-0.5">
+              <i class="fa-solid fa-cash-register text-boutique-gold"></i>
+              <span>Open POS</span>
+            </button>
+
+            <button onclick="openEditMemberModal()" class="px-3 py-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:-translate-y-0.5">
+              <i class="fa-solid fa-pen-to-square text-boutique-gold"></i>
+              <span>Edit</span>
+            </button>
+
+            <button onclick="deleteActiveMember()" class="px-3 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:-translate-y-0.5">
+              <i class="fa-solid fa-trash-can text-rose-600"></i>
+              <span>Delete</span>
+            </button>
+          </div>
+
+          <!-- Member Transaction History -->
+          <div class="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm" data-aos="fade-up" data-aos-duration="600">
+            <div class="flex justify-between items-center mb-4">
+              <h4 class="font-serif text-lg font-bold text-stone-900">Points & Billing Statement</h4>
+              <span id="history-count" class="text-xs bg-stone-100 text-stone-600 px-2.5 py-1 rounded-full font-medium">0 transactions</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs sm:text-sm">
+                <thead>
+                  <tr class="text-stone-400 border-b border-stone-100 text-[11px] uppercase tracking-wider font-semibold">
+                    <th class="pb-3">Date</th>
+                    <th class="pb-3">Transaction</th>
+                    <th class="pb-3 text-right">Bill Value</th>
+                    <th class="pb-3 text-right">Points Activity</th>
+                    <th class="pb-3 text-right">Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-history-tbody" class="divide-y divide-stone-100 text-stone-700">
+                  <tr>
+                    <td colspan="5" class="py-6 text-center text-stone-400">No activity logged for this member yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW 2: CASHIER / STORE POS SCANNER -->
+    <div id="view-pos" class="hidden space-y-8">
+      
+      <!-- Top Cashier Status -->
+      <div class="flex flex-wrap items-center justify-between bg-stone-900 text-white p-6 rounded-3xl shadow-md gap-4 border border-boutique-gold/20" data-aos="fade-down">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-boutique-gold/20 flex items-center justify-center text-boutique-gold text-2xl">
+            <i class="fa-solid fa-cash-register"></i>
+          </div>
+          <div>
+            <h2 class="font-serif text-xl sm:text-2xl font-bold">Billing & Rewards Terminal</h2>
+            <p class="text-xs text-stone-400">Ganapathi Cloth Store • Cash Counter Scanner</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs text-stone-300 font-medium">System Ready</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left: QR Scanner & Manual Input -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-6" data-aos="fade-right">
+          <div class="flex justify-between items-center">
+            <h3 class="font-serif text-lg font-bold text-stone-900">Scan Member Card</h3>
+            <span class="text-xs text-stone-400">Camera / Barcode Reader</span>
+          </div>
+
+          <!-- HTML5 Camera Scanner Area -->
+          <div class="relative bg-stone-950 rounded-2xl overflow-hidden min-h-[220px] flex flex-col items-center justify-center border border-stone-200 shadow-inner">
+            <div id="qr-reader" class="w-full h-full"></div>
+            <div id="camera-placeholder" class="p-6 text-center text-stone-400 space-y-3">
+              <i class="fa-solid fa-camera text-3xl text-boutique-gold animate-bounce"></i>
+              <p class="text-xs">Scan customer's printed card or mobile screen</p>
+              <button onclick="toggleCameraScanner()" id="btn-toggle-camera" 
+                class="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-boutique-gold border border-boutique-gold/40 rounded-xl text-xs font-semibold transition-all">
+                <i class="fa-solid fa-qrcode mr-1"></i> Start Camera Scanner
+              </button>
+            </div>
+          </div>
+
+          <!-- Manual ID Search -->
+          <div class="space-y-3 pt-2 border-t border-stone-100">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-stone-500">Barcode Gun / Manual Entry</label>
+              <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <i class="fa-solid fa-barcode text-[11px] mr-1"></i> Gun Reader Ready
+              </span>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="manual-card-id" placeholder="Scan with barcode gun or type ID / Mobile..." 
+                class="flex-1 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold uppercase font-mono">
+              <button onclick="lookupManualCard()" 
+                class="px-5 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 shadow hover:-translate-y-0.5">
+                <i class="fa-solid fa-magnifying-glass text-boutique-gold text-xs"></i>
+                <span>Fetch</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Test Customer Chips -->
+          <div class="pt-2">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-stone-400 block mb-2">Quick Test One-Click Members:</span>
+            <div id="quick-customer-chips" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Right: Active Customer Billing & Redemption Box -->
+        <div class="lg:col-span-7 space-y-6" data-aos="fade-left">
+          <div id="pos-customer-banner" class="bg-stone-100 border border-stone-200 rounded-3xl p-6 transition-all duration-300">
+            <!-- State 1: No Customer Scanned -->
+            <div id="pos-no-customer" class="text-center py-10 space-y-3">
+              <div class="w-14 h-14 mx-auto rounded-full bg-stone-200 flex items-center justify-center text-stone-400 text-xl">
+                <i class="fa-solid fa-address-card"></i>
+              </div>
+              <h4 class="font-serif text-lg font-bold text-stone-700">No Member Card Scanned</h4>
+              <p class="text-xs text-stone-500 max-w-sm mx-auto">Scan the customer's QR or Barcode using the camera scanner or enter their Card ID / Mobile to calculate reward points.</p>
+            </div>
+
+            <!-- State 2: Customer Loaded -->
+            <div id="pos-has-customer" class="hidden space-y-6">
+              
+              <div class="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200/80 pb-4">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-xs px-2.5 py-0.5 rounded-md bg-stone-900 text-boutique-gold font-bold" id="pos-card-id">GCS-XXXXX</span>
+                    <span class="text-xs text-emerald-700 font-semibold uppercase tracking-wider">● Verified GCS Member</span>
+                  </div>
+                  <h3 id="pos-customer-name" class="font-serif text-2xl font-bold text-stone-900 mt-1">Customer Name</h3>
+                  <p id="pos-customer-phone" class="text-xs text-stone-500 font-mono">+91 0000000000</p>
+                </div>
+
+                <!-- Credit Balance Badge in POS -->
+                <div class="bg-white border border-stone-200 rounded-2xl px-5 py-3 text-right shadow-sm">
+                  <span class="text-[11px] font-semibold uppercase tracking-wider text-stone-400 block">Available Points</span>
+                  <div class="flex items-baseline gap-1.5 justify-end">
+                    <span id="pos-customer-points" class="font-serif text-3xl font-bold text-boutique-gold">0</span>
+                    <span class="text-xs text-stone-600 font-medium">pts</span>
+                  </div>
+                  <span class="text-[11px] text-emerald-700 font-bold">(₹<span id="pos-customer-cash-val">0</span> Discount Value)</span>
+                </div>
+              </div>
+
+              <!-- Two Action Tabs -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Action 1: Add Purchase & Award Credits -->
+                <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="font-serif font-bold text-stone-900 text-base flex items-center gap-1.5">
+                        <i class="fa-solid fa-cart-shopping text-boutique-gold text-sm"></i>
+                        <span>New Cloth Purchase</span>
+                      </h4>
+                      <span class="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Earn Points</span>
+                    </div>
+                    <p class="text-xs text-stone-500">25 credits given for every full ₹500 billed.</p>
+
+                    <div class="mt-4">
+                      <label class="block text-xs font-semibold text-stone-700 mb-1">Enter Bill Amount (₹)</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400 font-semibold">₹</span>
+                        <input type="number" id="pos-purchase-amount" min="1" step="1" oninput="calculateRewardPreview(this.value)" placeholder="e.g. 1500" 
+                          class="w-full pl-8 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-boutique-gold">
+                      </div>
+                    </div>
+
+                    <div id="reward-calc-preview" class="mt-3 p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs space-y-1">
+                      <div class="flex justify-between text-stone-700">
+                        <span>Multiplier (Units of ₹500):</span>
+                        <span class="font-bold text-stone-900" id="preview-multipliers">0 units of ₹500</span>
+                      </div>
+                      <div class="flex justify-between text-stone-900 font-bold text-sm pt-1 border-t border-amber-200/50">
+                        <span>Points to Add:</span>
+                        <span class="text-boutique-gold font-serif text-base">+<span id="preview-credits">0</span> Credits</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button onclick="submitPurchaseAndAward()" 
+                    class="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow hover:-translate-y-0.5">
+                    <i class="fa-solid fa-circle-plus text-boutique-gold"></i>
+                    <span>Credit Points to Member</span>
+                  </button>
+                </div>
+
+                <!-- Action 2: Redeem Points -->
+                <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="font-serif font-bold text-stone-900 text-base flex items-center gap-1.5">
+                        <i class="fa-solid fa-tag text-boutique-accent text-sm"></i>
+                        <span>Redeem Discount</span>
+                      </h4>
+                      <span class="text-[10px] uppercase font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Instant Cash Off</span>
+                    </div>
+                    <p class="text-xs text-stone-500">1 Credit = ₹1 deduction from total bill.</p>
+
+                    <div class="mt-4">
+                      <label class="block text-xs font-semibold text-stone-700 mb-1">Points to Redeem</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400">
+                          <i class="fa-solid fa-coins text-xs text-boutique-gold"></i>
+                        </span>
+                        <input type="number" id="pos-redeem-points" min="1" oninput="calculateRedeemPreview(this.value)" placeholder="Enter points" 
+                          class="w-full pl-9 pr-14 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        <button onclick="setMaxRedeem()" type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-xs font-bold text-stone-700 hover:text-black">MAX</button>
+                      </div>
+                    </div>
+
+                    <div id="redeem-calc-preview" class="mt-3 p-3 bg-stone-50 border border-stone-200 rounded-xl text-xs space-y-1">
+                      <div class="flex justify-between text-stone-700">
+                        <span>Discount to Bill:</span>
+                        <span class="font-bold text-rose-700" id="preview-discount-amt">₹0</span>
+                      </div>
+                      <div class="flex justify-between text-stone-700 pt-1 border-t border-stone-200/60">
+                        <span>Remaining Balance:</span>
+                        <span class="font-bold text-stone-900" id="preview-remaining-pts">0 pts</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button onclick="submitRedeemPoints()" 
+                    class="w-full py-3 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow hover:-translate-y-0.5">
+                    <i class="fa-solid fa-receipt text-boutique-gold"></i>
+                    <span>Apply Discount on Bill</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- POS Member Recent History -->
+              <div class="pt-4 border-t border-stone-200">
+                <h5 class="text-xs uppercase font-bold tracking-wider text-stone-500 mb-2">Member's Recent Transactions</h5>
+                <div id="pos-recent-history" class="space-y-1.5 text-xs text-stone-600 max-h-40 overflow-y-auto pr-1"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: EDIT MEMBER DETAILS -->
+  <div id="edit-member-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 border border-stone-200 transform transition-all duration-300 scale-95 opacity-0" id="edit-modal-box">
+      <div class="flex justify-between items-center border-b border-stone-100 pb-3">
+        <div>
+          <h3 class="font-serif text-lg font-bold text-stone-900">Edit Member Details</h3>
+          <p class="text-xs text-stone-400 font-mono" id="edit-modal-card-id">GCS-XXXXX</p>
+        </div>
+        <button onclick="closeEditMemberModal()" class="w-8 h-8 rounded-full bg-stone-100 text-stone-500 hover:text-stone-900 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="edit-member-form" onsubmit="handleUpdateMember(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">Customer Name</label>
+          <input type="text" id="edit-member-name" required class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold font-medium">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1">Mobile Number (10 Digits)</label>
+          <input type="tel" id="edit-member-phone" pattern="[0-9]{10}" required class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-boutique-gold font-medium font-mono">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeEditMemberModal()" class="flex-1 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs sm:text-sm font-semibold transition-all">Cancel</button>
+          <button type="submit" class="flex-1 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 shadow">
+            <i class="fa-solid fa-check text-boutique-gold"></i>
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-stone-200 py-6 px-4 mt-12 text-center text-xs text-stone-500" data-aos="fade-in">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-certificate text-boutique-gold"></i>
+        <span><strong>Ganapathi Cloth Store</strong> (Estd: 2019) • Customer Loyalty & Rewards Platform</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="exportMembersToCSV()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all hover:-translate-y-0.5">
+          <i class="fa-solid fa-file-excel"></i> Export Ledger (CSV)
+        </button>
+        <button onclick="resetToSampleData()" class="text-stone-400 hover:text-stone-800 underline text-xs">Reset Sample Data</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================== -->
+  <!-- JAVASCRIPT APPLICATION LOGIC                   -->
+  <!-- ============================================== -->
+  <script>
+    // Initialize Animate On Scroll (AOS)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof AOS !== 'undefined') {
+        AOS.init({
+          duration: 650,
+          easing: 'ease-out-cubic',
+          once: true,
+          offset: 40
+        });
+      }
+    });
+
+    // -----------------------------------------------------------------
+    // FIREBASE CONFIGURATION
+    // -----------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyANAG6uuztUARLyZwcIJotvB9ri87M_mQs",
+      authDomain: "ganapathi-cloth-store.firebaseapp.com",
+      databaseURL: "https://ganapathi-cloth-store-default-rtdb.firebaseio.com",
+      projectId: "ganapathi-cloth-store",
+      storageBucket: "ganapathi-cloth-store.firebasestorage.app",
+      messagingSenderId: "138935569329",
+      appId: "1:138935569329:web:0723dc8d1de9e85dea8b90",
+      measurementId: "G-18BJ4VFXZD"
+    };
+
+    let db = null;
+    let isCloudEnabled = false;
+
+    if (typeof firebase !== 'undefined') {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        isCloudEnabled = true;
+        console.log("Firebase Firestore connected successfully.");
+      } catch (err) {
+        console.warn("Firebase initialization failed, falling back to LocalStorage:", err);
+      }
+    }
+
+    const STORAGE_KEY_CUSTOMERS = 'ganapathi_cloth_store_members_v2';
+    const STORAGE_KEY_ACTIVE_ID = 'ganapathi_cloth_store_active_id';
+
+    let customers = [];
+    let currentCustomerId = null;
+    let posActiveCustomerId = null;
+    let html5QrScanner = null;
+    let isCameraRunning = false;
+
+    const DEFAULT_CUSTOMERS = [
+      {
+        id: 'GCS-20191',
+        name: 'Ramesh Kumar',
+        phone: '9845012345',
+        points: 75,
+        history: [
+          { date: '2026-11-01 11:20', type: 'PURCHASE', amount: 1500, points: 75, balance: 75, note: '3 units of ₹500' }
+        ]
+      },
+      {
+        id: 'GCS-20192',
+        name: 'Lakshmi Sundaram',
+        phone: '9789065432',
+        points: 150,
+        history: [
+          { date: '2026-10-25 17:45', type: 'PURCHASE', amount: 3000, points: 150, balance: 150, note: '6 units of ₹500' }
+        ]
+      },
+      {
+        id: 'GCS-20193',
+        name: 'Anand Mohan',
+        phone: '9443217890',
+        points: 25,
+        history: [
+          { date: '2026-10-29 14:10', type: 'PURCHASE', amount: 550, points: 25, balance: 25, note: '1 unit of ₹500' }
+        ]
+      }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (isCloudEnabled) {
+        setupCloudListener();
+      } else {
+        loadDataFromStorage();
+        renderCustomerDropdown();
+        renderQuickLookupChips();
+        if (customers.length > 0) {
+          const savedId = localStorage.getItem(STORAGE_KEY_ACTIVE_ID);
+          const exists = customers.find(c => c.id === savedId);
+          setActiveCustomer(exists ? savedId : customers[0].id);
+        }
+      }
+
+      const manualInput = document.getElementById('manual-card-id');
+      if (manualInput) {
+        manualInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            lookupManualCard();
+          }
+        });
+      }
+    });
+
+    // Cloud Real-time Listener
+    function setupCloudListener() {
+      db.collection("members").onSnapshot((snapshot) => {
+        const cloudMembers = [];
+        snapshot.forEach(docSnap => cloudMembers.push(docSnap.data()));
+
+        if (cloudMembers.length > 0) {
+          customers = cloudMembers;
+        } else {
+          DEFAULT_CUSTOMERS.forEach(m => db.collection("members").doc(m.id).set(m));
+          return;
+        }
+
+        renderCustomerDropdown();
+        renderQuickLookupChips();
+
+        const activeId = currentCustomerId || customers[0].id;
+        const exists = customers.find(c => c.id === activeId);
+        setActiveCustomer(exists ? activeId : customers[0].id);
+
+        if (posActiveCustomerId) {
+          const posCust = customers.find(c => c.id === posActiveCustomerId);
+          if (posCust) renderPosCustomerBanner(posCust);
+        }
+      }, (err) => {
+        console.error("Cloud listener error:", err);
+        loadDataFromStorage();
+      });
+    }
+
+    async function persistCustomer(cust) {
+      if (isCloudEnabled && db) {
+        try {
+          await db.collection("members").doc(cust.id).set(cust);
+        } catch (e) {
+          console.error("Cloud save failed, saving locally:", e);
+          saveDataToStorage();
+        }
+      } else {
+        saveDataToStorage();
+      }
+    }
+
+    async function removeCustomerFromCloud(id) {
+      if (isCloudEnabled && db) {
+        try {
+          await db.collection("members").doc(id).delete();
+        } catch (e) {
+          console.error("Cloud delete error:", e);
+        }
+      }
+    }
+
+    function loadDataFromStorage() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_CUSTOMERS);
+        if (stored) {
+          customers = JSON.parse(stored);
+        } else {
+          customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+          saveDataToStorage();
+        }
+      } catch (e) {
+        customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+      }
+    }
+
+    function saveDataToStorage() {
+      localStorage.setItem(STORAGE_KEY_CUSTOMERS, JSON.stringify(customers));
+      if (currentCustomerId) {
+        localStorage.setItem(STORAGE_KEY_ACTIVE_ID, currentCustomerId);
+      }
+    }
+
+    function resetToSampleData() {
+      if (confirm('Reset to initial sample members for Ganapathi Cloth Store?')) {
+        customers = JSON.parse(JSON.stringify(DEFAULT_CUSTOMERS));
+        if (isCloudEnabled && db) {
+          customers.forEach(c => db.collection("members").doc(c.id).set(c));
+        } else {
+          saveDataToStorage();
+        }
+        renderCustomerDropdown();
+        renderQuickLookupChips();
+        setActiveCustomer(customers[0].id);
+        showToast('Sample data reset successfully', 'info');
+      }
+    }
+
+    function switchMode(mode) {
+      const customerView = document.getElementById('view-customer');
+      const posView = document.getElementById('view-pos');
+      const btnCustomer = document.getElementById('btn-mode-customer');
+      const btnPos = document.getElementById('btn-mode-pos');
+
+      if (mode === 'customer') {
+        customerView.classList.remove('hidden');
+        posView.classList.add('hidden');
+        btnCustomer.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 bg-white text-boutique-charcoal shadow-sm";
+        btnPos.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-stone-500 hover:text-stone-900";
+        stopCameraScanner();
+      } else {
+        customerView.classList.add('hidden');
+        posView.classList.remove('hidden');
+        btnPos.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 bg-white text-boutique-charcoal shadow-sm";
+        btnCustomer.className = "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 text-stone-500 hover:text-stone-900";
+      }
+    }
+
+    function renderCustomerDropdown() {
+      const select = document.getElementById('customer-dropdown');
+      if (!select) return;
+      select.innerHTML = '';
+      
+      customers.forEach(cust => {
+        const opt = document.createElement('option');
+        opt.value = cust.id;
+        opt.textContent = `${cust.name} (${cust.id}) - ${cust.points} Points`;
+        select.appendChild(opt);
+      });
+
+      if (currentCustomerId) {
+        select.value = currentCustomerId;
+      }
+    }
+
+    function renderQuickLookupChips() {
+      const container = document.getElementById('quick-customer-chips');
+      if (!container) return;
+      container.innerHTML = '';
+
+      customers.slice(0, 4).forEach(cust => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'px-2.5 py-1 text-xs bg-stone-100 hover:bg-stone-200 rounded-lg text-stone-700 border border-stone-200 font-medium transition-all hover:scale-105';
+        btn.textContent = `${cust.name.split(' ')[0]} (${cust.id})`;
+        btn.onclick = () => loadCardToPOS(cust.id);
+        container.appendChild(btn);
+      });
+    }
+
+    function onCustomerSelect(id) {
+      setActiveCustomer(id);
+    }
+
+    function setActiveCustomer(id) {
+      currentCustomerId = id;
+      localStorage.setItem(STORAGE_KEY_ACTIVE_ID, id);
+      
+      const cust = customers.find(c => c.id === id);
+      if (!cust) return;
+
+      document.getElementById('card-holder-name').textContent = cust.name;
+      document.getElementById('card-holder-phone').textContent = `+91 ${cust.phone}`;
+      document.getElementById('card-id-label').textContent = cust.id;
+      
+      const select = document.getElementById('customer-dropdown');
+      if (select) select.value = cust.id;
+
+      requestAnimationFrame(() => renderCardCodes(cust.id));
+      renderCustomerHistoryTable(cust);
+
+      if (posActiveCustomerId === id) {
+        renderPosCustomerBanner(cust);
+      }
+    }
+
+    function renderCardCodes(cardId) {
+      const qrContainer = document.getElementById('card-qrcode');
+      if (qrContainer) {
+        qrContainer.innerHTML = '';
+        try {
+          new QRCode(qrContainer, {
+            text: cardId,
+            width: 105,
+            height: 105,
+            colorDark: "#111112",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (qrErr) {
+          console.error("QR Code generation error:", qrErr);
+        }
+      }
+
+      try {
+        const barcodeEl = document.getElementById('card-barcode');
+        if (barcodeEl && typeof JsBarcode !== 'undefined') {
+          JsBarcode(barcodeEl, String(cardId).trim(), {
+            format: "CODE128",
+            lineColor: "#111112",
+            width: 2.2,
+            height: 48,
+            displayValue: true,
+            fontSize: 13,
+            font: "monospace",
+            textMargin: 4,
+            background: "#FFFFFF",
+            margin: 4
+          });
+        }
+      } catch (err) {
+        console.error("Barcode rendering error:", err);
+      }
+    }
+
+    function renderCustomerHistoryTable(customer) {
+      const tbody = document.getElementById('customer-history-tbody');
+      const countLabel = document.getElementById('history-count');
+      const history = customer.history || [];
+      
+      if (countLabel) countLabel.textContent = `${history.length} transaction${history.length === 1 ? '' : 's'}`;
+      if (!tbody) return;
+
+      if (history.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-stone-400">No activity logged for this member yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = history.slice().reverse().map(item => {
+        const isPurchase = item.type === 'PURCHASE';
+        const typeBadge = isPurchase 
+          ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-stone-900 border border-amber-300">PURCHASE</span>`
+          : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">DISCOUNT REDEEM</span>`;
+
+        const ptsLabel = isPurchase
+          ? `<span class="font-bold text-emerald-700">+${item.points} pts</span>`
+          : `<span class="font-bold text-rose-700">-${item.points} pts</span>`;
+
+        const billVal = item.amount ? `₹${item.amount.toLocaleString('en-IN')}` : '-';
+
+        return `
+          <tr class="hover:bg-stone-50 transition-colors">
+            <td class="py-3 font-mono text-xs text-stone-500">${item.date}</td>
+            <td class="py-3">${typeBadge}</td>
+            <td class="py-3 text-right font-medium">${billVal}</td>
+            <td class="py-3 text-right">${ptsLabel}</td>
+            <td class="py-3 text-right font-bold text-stone-900">${item.balance}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handleRegistration(event) {
+      event.preventDefault();
+      const nameInput = document.getElementById('reg-name');
+      const phoneInput = document.getElementById('reg-phone');
+
+      const name = nameInput.value.trim();
+      const phone = phoneInput.value.trim();
+
+      if (!name || phone.length !== 10) {
+        showToast('Please enter a valid customer name and 10-digit mobile number', 'error');
+        return;
+      }
+
+      const existing = customers.find(c => c.phone === phone);
+      if (existing) {
+        showToast(`Mobile number already registered with card ${existing.id}`, 'error');
+        setActiveCustomer(existing.id);
+        return;
+      }
+
+      const randomIdNum = Math.floor(10000 + Math.random() * 90000);
+      const newCardId = `GCS-${randomIdNum}`;
+
+      const newCust = {
+        id: newCardId,
+        name: name,
+        phone: phone,
+        points: 0,
+        history: []
+      };
+
+      customers.unshift(newCust);
+      await persistCustomer(newCust);
+
+      renderCustomerDropdown();
+      renderQuickLookupChips();
+      setActiveCustomer(newCust.id);
+
+      nameInput.value = '';
+      phoneInput.value = '';
+
+      showToast(`Membership created for ${name}!`, 'success');
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+    }
+
+    // -------------------------------------------------------------
+    // DOWNLOAD CARD AS PNG
+    // -------------------------------------------------------------
+    async function downloadCardAsPNG() {
+      const cardElement = document.getElementById('printable-membership-card');
+      const cust = customers.find(c => c.id === currentCustomerId);
+
+      if (!cardElement || !cust) {
+        showToast('No active member card to download', 'error');
+        return;
+      }
+
+      showToast('Generating HD image, please wait...', 'info');
+
+      try {
+        const canvas = await html2canvas(cardElement, {
+          scale: 3,
+          backgroundColor: null,
+          useCORS: true,
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        const safeName = cust.name.replace(/[^a-zA-Z0-9]/g, '_');
+        link.download = `Ganapathi_Loyalty_Card_${cust.id}_${safeName}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast('Card PNG downloaded successfully!', 'success');
+      } catch (err) {
+        console.error('Download card error:', err);
+        showToast('Failed to generate PNG image. Please try again.', 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SEND CARD TO MEMBER VIA WHATSAPP (CLIPBOARD + AUTO-DOWNLOAD)
+    // -------------------------------------------------------------
+    async function sendCardViaWhatsApp() {
+      const cust = customers.find(c => c.id === currentCustomerId);
+      if (!cust) {
+        showToast('Please select a member first', 'error');
+        return;
+      }
+
+      const cleanPhone = cust.phone.replace(/[^0-9]/g, '');
+      if (cleanPhone.length !== 10) {
+        showToast('Invalid mobile number registered for this member', 'error');
+        return;
+      }
+
+      const cardElement = document.getElementById('printable-membership-card');
+      if (!cardElement) return;
+
+      showToast('Generating card image...', 'info');
+
+      try {
+        const canvas = await html2canvas(cardElement, {
+          scale: 2.5,
+          backgroundColor: null,
+          useCORS: true,
+          logging: false
+        });
+
+        const safeName = cust.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const fileName = `Ganapathi_Loyalty_Card_${cust.id}_${safeName}.png`;
+
+        // 1. Mobile Web Share API (Direct attach on supported phones)
+        if (navigator.canShare) {
+          try {
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+            const file = new File([blob], fileName, { type: 'image/png' });
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: 'Ganapathi Cloth Store Member Card',
+                text: `Privilege Member Card for ${cust.name} (ID: ${cust.id})`
+              });
+              showToast('Shared successfully!', 'success');
+              return;
+            }
+          } catch (shareErr) {
+            console.warn('Native share skipped:', shareErr);
+          }
+        }
+
+        // 2. Desktop: Try writing directly to system clipboard before opening new window
+        let copiedToClipboard = false;
+        try {
+          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+          const item = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([item]);
+          copiedToClipboard = true;
+        } catch (clipErr) {
+          console.warn('Clipboard write permission denied or blocked:', clipErr);
+        }
+
+        // 3. Auto-download PNG so you have the image file ready immediately
+        const dataUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.download = fileName;
+        downloadLink.href = dataUrl;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // 4. Construct WhatsApp Message and Open Chat
+        const message = 
+          `*Ganapathi Cloth Store (Estd: 2019)*\n` +
+          `*Privilege Member Digital Card*\n\n` +
+          `Hello *${cust.name}*,\n` +
+          `Here is your official Privilege Club Loyalty Card!\n\n` +
+          `💳 *Card ID:* ${cust.id}\n` +
+          `🪙 *Available Points:* ${cust.points} pts (Value: ₹${cust.points})\n\n` +
+          `✨ *Reward Scheme:* Earn 25 points on every ₹500 purchase. Redeem anytime for cash discounts!\n\n` +
+          `_(Please save this card image to scan at our billing counter)_`;
+
+        const waUrl = `https://web.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+
+        if (copiedToClipboard) {
+          showToast('Image copied to clipboard! Press Ctrl+V in the WhatsApp chat.', 'success');
+        } else {
+          showToast('Card downloaded! Drag and drop the downloaded file into WhatsApp chat.', 'info');
+        }
+
+      } catch (err) {
+        console.error('WhatsApp dispatch error:', err);
+        showToast('Failed to generate card image.', 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // UPDATE & DELETE MEMBER LOGIC
+    // -------------------------------------------------------------
+    function openEditMemberModal() {
+      const cust = customers.find(c => c.id === currentCustomerId);
+      if (!cust) return showToast('No member selected to edit', 'error');
+
+      document.getElementById('edit-modal-card-id').textContent = cust.id;
+      document.getElementById('edit-member-name').value = cust.name;
+      document.getElementById('edit-member-phone').value = cust.phone;
+
+      const modal = document.getElementById('edit-member-modal');
+      const box = document.getElementById('edit-modal-box');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        box.classList.remove('scale-95', 'opacity-0');
+        box.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    function closeEditMemberModal() {
+      const modal = document.getElementById('edit-member-modal');
+      const box = document.getElementById('edit-modal-box');
+      box.classList.remove('scale-100', 'opacity-100');
+      box.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    async function handleUpdateMember(event) {
+      event.preventDefault();
+      const cust = customers.find(c => c.id === currentCustomerId);
+      if (!cust) return;
+
+      const newName = document.getElementById('edit-member-name').value.trim();
+      const newPhone = document.getElementById('edit-member-phone').value.trim();
+
+      if (!newName || newPhone.length !== 10) {
+        showToast('Please enter a valid name and 10-digit phone', 'error');
+        return;
+      }
+
+      const conflict = customers.find(c => c.phone === newPhone && c.id !== cust.id);
+      if (conflict) {
+        showToast(`Phone number is already used by ${conflict.name}`, 'error');
+        return;
+      }
+
+      cust.name = newName;
+      cust.phone = newPhone;
+
+      await persistCustomer(cust);
+      renderCustomerDropdown();
+      renderQuickLookupChips();
+      setActiveCustomer(cust.id);
+
+      closeEditMemberModal();
+      showToast('Member details updated successfully!', 'success');
+    }
+
+    async function deleteActiveMember() {
+      const cust = customers.find(c => c.id === currentCustomerId);
+      if (!cust) return showToast('No member selected', 'error');
+
+      if (!confirm(`Are you sure you want to permanently delete member ${cust.name} (${cust.id})?`)) {
+        return;
+      }
+
+      const idToDelete = cust.id;
+      customers = customers.filter(c => c.id !== idToDelete);
+      saveDataToStorage();
+      await removeCustomerFromCloud(idToDelete);
+
+      showToast(`Member ${idToDelete} removed`, 'info');
+
+      if (customers.length > 0) {
+        renderCustomerDropdown();
+        renderQuickLookupChips();
+        setActiveCustomer(customers[0].id);
+      } else {
+        document.getElementById('card-holder-name').textContent = 'No Members Remaining';
+        document.getElementById('card-holder-phone').textContent = '+91 ----------';
+        document.getElementById('card-id-label').textContent = 'GCS-000000';
+        document.getElementById('customer-dropdown').innerHTML = '';
+        document.getElementById('quick-customer-chips').innerHTML = '';
+      }
+    }
+
+    function testQuickScanInPOS() {
+      if (!currentCustomerId) return;
+      switchMode('pos');
+      loadCardToPOS(currentCustomerId);
+    }
+
+    // POS Terminal Logic
+    function lookupManualCard() {
+      const inputEl = document.getElementById('manual-card-id');
+      if (!inputEl) return;
+      const query = inputEl.value.trim().toUpperCase();
+
+      if (!query) {
+        showToast('Please enter or scan a Card ID or Mobile Number', 'error');
+        inputEl.focus();
+        return;
+      }
+
+      const found = customers.find(c => {
+        const idClean = c.id.toUpperCase();
+        const phoneClean = c.phone.trim();
+        return idClean === query || 
+               phoneClean === query ||
+               idClean.replace(/[^0-9]/g, '') === query.replace(/[^0-9]/g, '');
+      });
+
+      if (found) {
+        loadCardToPOS(found.id);
+        inputEl.value = '';
+        showToast(`Found Member: ${found.name}`, 'success');
+      } else {
+        showToast(`No member found matching "${query}"`, 'error');
+        inputEl.select();
+      }
+    }
+
+    function loadCardToPOS(cardId) {
+      const cust = customers.find(c => c.id.toUpperCase() === String(cardId).trim().toUpperCase());
+      if (!cust) {
+        showToast(`Card ${cardId} not registered in system`, 'error');
+        return;
+      }
+
+      posActiveCustomerId = cust.id;
+      renderPosCustomerBanner(cust);
+    }
+
+    function renderPosCustomerBanner(cust) {
+      const noCust = document.getElementById('pos-no-customer');
+      const hasCust = document.getElementById('pos-has-customer');
+
+      if (!cust) {
+        noCust.classList.remove('hidden');
+        hasCust.classList.add('hidden');
+        return;
+      }
+
+      noCust.classList.add('hidden');
+      hasCust.classList.remove('hidden');
+
+      document.getElementById('pos-card-id').textContent = cust.id;
+      document.getElementById('pos-customer-name').textContent = cust.name;
+      document.getElementById('pos-customer-phone').textContent = `+91 ${cust.phone}`;
+      document.getElementById('pos-customer-points').textContent = cust.points.toLocaleString('en-IN');
+      document.getElementById('pos-customer-cash-val').textContent = cust.points.toLocaleString('en-IN');
+
+      const purchaseInput = document.getElementById('pos-purchase-amount');
+      const redeemInput = document.getElementById('pos-redeem-points');
+      if (purchaseInput) purchaseInput.value = '';
+      if (redeemInput) redeemInput.value = '';
+      calculateRewardPreview(0);
+      calculateRedeemPreview(0);
+
+      const posHistory = document.getElementById('pos-recent-history');
+      if (posHistory) {
+        const history = cust.history || [];
+        if (history.length === 0) {
+          posHistory.innerHTML = `<p class="text-stone-400 italic">No past transactions recorded.</p>`;
+        } else {
+          posHistory.innerHTML = history.slice(-4).reverse().map(h => {
+            const isPurchase = h.type === 'PURCHASE';
+            return `
+              <div class="flex items-center justify-between p-2 rounded-lg bg-white border border-stone-200">
+                <div>
+                  <span class="font-semibold text-stone-800">${isPurchase ? 'Purchase Earn' : 'Discount Redeem'}</span>
+                  <span class="text-[10px] text-stone-400 ml-1.5 font-mono">${h.date}</span>
+                </div>
+                <div class="font-bold ${isPurchase ? 'text-emerald-700' : 'text-rose-700'}">
+                  ${isPurchase ? '+' : '-'}${h.points} pts
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+
+    function calculateRewardPreview(amount) {
+      const amt = parseFloat(amount) || 0;
+      const units = Math.floor(amt / 500);
+      const points = units * 25;
+
+      const unitsEl = document.getElementById('preview-multipliers');
+      const creditsEl = document.getElementById('preview-credits');
+
+      if (unitsEl) unitsEl.textContent = `${units} unit${units === 1 ? '' : 's'} of ₹500`;
+      if (creditsEl) creditsEl.textContent = points;
+    }
+
+    async function submitPurchaseAndAward() {
+      if (!posActiveCustomerId) {
+        showToast('Please fetch or scan a customer card first', 'error');
+        return;
+      }
+      const cust = customers.find(c => c.id === posActiveCustomerId);
+      if (!cust) return;
+
+      const amtInput = document.getElementById('pos-purchase-amount');
+      const amt = Math.floor(parseFloat(amtInput.value) || 0);
+
+      if (amt < 500) {
+        showToast('Bill amount must be at least ₹500 to earn points (25 pts / ₹500)', 'error');
+        return;
+      }
+
+      const units = Math.floor(amt / 500);
+      const pointsToAdd = units * 25;
+      cust.points += pointsToAdd;
+
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+
+      cust.history = cust.history || [];
+      cust.history.push({
+        date: dateStr,
+        type: 'PURCHASE',
+        amount: amt,
+        points: pointsToAdd,
+        balance: cust.points,
+        note: `${units} unit(s) of ₹500`
+      });
+
+      await persistCustomer(cust);
+      renderCustomerDropdown();
+      setActiveCustomer(cust.id);
+      renderPosCustomerBanner(cust);
+
+      amtInput.value = '';
+      calculateRewardPreview(0);
+
+      showToast(`Added +${pointsToAdd} reward points for ₹${amt.toLocaleString('en-IN')} bill!`, 'success');
+      confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+    }
+
+    function calculateRedeemPreview(pts) {
+      const cust = customers.find(c => c.id === posActiveCustomerId);
+      const currentPts = cust ? cust.points : 0;
+      const ptsToRedeem = Math.max(0, parseInt(pts) || 0);
+
+      const discountAmt = ptsToRedeem;
+      const remaining = Math.max(0, currentPts - ptsToRedeem);
+
+      const discountEl = document.getElementById('preview-discount-amt');
+      const remainingEl = document.getElementById('preview-remaining-pts');
+
+      if (discountEl) discountEl.textContent = `₹${discountAmt.toLocaleString('en-IN')}`;
+      if (remainingEl) remainingEl.textContent = `${remaining.toLocaleString('en-IN')} pts`;
+    }
+
+    function setMaxRedeem() {
+      if (!posActiveCustomerId) return;
+      const cust = customers.find(c => c.id === posActiveCustomerId);
+      if (!cust) return;
+
+      const redeemInput = document.getElementById('pos-redeem-points');
+      if (redeemInput) {
+        redeemInput.value = cust.points;
+        calculateRedeemPreview(cust.points);
+      }
+    }
+
+    async function submitRedeemPoints() {
+      if (!posActiveCustomerId) {
+        showToast('Please fetch or scan a customer card first', 'error');
+        return;
+      }
+      const cust = customers.find(c => c.id === posActiveCustomerId);
+      if (!cust) return;
+
+      const input = document.getElementById('pos-redeem-points');
+      const pointsToRedeem = parseInt(input.value) || 0;
+
+      if (pointsToRedeem <= 0) {
+        showToast('Please enter a valid points amount to redeem', 'error');
+        return;
+      }
+
+      if (pointsToRedeem > cust.points) {
+        showToast(`Customer only has ${cust.points} points available`, 'error');
+        return;
+      }
+
+      cust.points -= pointsToRedeem;
+
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+
+      cust.history = cust.history || [];
+      cust.history.push({
+        date: dateStr,
+        type: 'REDEEM',
+        amount: pointsToRedeem,
+        points: pointsToRedeem,
+        balance: cust.points,
+        note: `Redeemed ₹${pointsToRedeem} discount`
+      });
+
+      await persistCustomer(cust);
+      renderCustomerDropdown();
+      setActiveCustomer(cust.id);
+      renderPosCustomerBanner(cust);
+
+      input.value = '';
+      calculateRedeemPreview(0);
+
+      showToast(`Successfully redeemed ₹${pointsToRedeem} cash discount!`, 'success');
+    }
+
+    // Camera Scanner
+    function toggleCameraScanner() {
+      if (isCameraRunning) stopCameraScanner();
+      else startCameraScanner();
+    }
+
+    function startCameraScanner() {
+      const placeholder = document.getElementById('camera-placeholder');
+      const toggleBtn = document.getElementById('btn-toggle-camera');
+
+      placeholder.classList.add('hidden');
+      toggleBtn.innerHTML = '<i class="fa-solid fa-stop mr-1"></i> Stop Camera';
+      toggleBtn.className = "px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-semibold transition-all";
+
+      const formatsToSupport = [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A
+      ];
+
+      html5QrScanner = new Html5Qrcode("qr-reader", { 
+        formatsToSupport: formatsToSupport,
+        verbose: false 
+      });
+
+      const config = { 
+        fps: 15, 
+        qrbox: (w, h) => {
+          const minEdge = Math.min(w, h);
+          return { width: Math.floor(minEdge * 0.85), height: Math.floor(minEdge * 0.60) };
+        },
+        aspectRatio: 1.0
+      };
+
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          showToast(`Scanned Code: ${decodedText}`, 'info');
+          loadCardToPOS(decodedText.trim());
+          stopCameraScanner();
+        },
+        () => {}
+      ).then(() => {
+        isCameraRunning = true;
+      }).catch((err) => {
+        console.error("Camera start failed", err);
+        showToast('Unable to open camera. Please use manual entry or barcode gun.', 'error');
+        stopCameraScanner();
+      });
+    }
+
+    function stopCameraScanner() {
+      if (html5QrScanner && isCameraRunning) {
+        html5QrScanner.stop().then(() => {
+          html5QrScanner.clear();
+          isCameraRunning = false;
+          resetCameraUI();
+        }).catch(err => {
+          console.warn(err);
+          isCameraRunning = false;
+          resetCameraUI();
+        });
+      } else {
+        resetCameraUI();
+      }
+    }
+
+    function resetCameraUI() {
+      const placeholder = document.getElementById('camera-placeholder');
+      const toggleBtn = document.getElementById('btn-toggle-camera');
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fa-solid fa-qrcode mr-1"></i> Start Camera Scanner';
+        toggleBtn.className = "px-4 py-2 bg-stone-800 hover:bg-stone-700 text-boutique-gold border border-boutique-gold/40 rounded-xl text-xs font-semibold transition-all";
+      }
+    }
+
+    // CSV Exporter
+    function exportMembersToCSV() {
+      if (!customers || customers.length === 0) {
+        showToast('No customer data available to export', 'error');
+        return;
+      }
+
+      const headers = ['Card ID', 'Customer Name', 'Mobile Number', 'Current Points', 'Transaction Date', 'Tx Type', 'Bill Amount (₹)', 'Points Activity', 'Balance After Tx'];
+      const rows = [];
+
+      customers.forEach(cust => {
+        if (!cust.history || cust.history.length === 0) {
+          rows.push([
+            `"${cust.id}"`,
+            `"${cust.name.replace(/"/g, '""')}"`,
+            `"${cust.phone}"`,
+            cust.points,
+            '-',
+            '-',
+            0,
+            0,
+            cust.points
+          ]);
+        } else {
+          cust.history.forEach(tx => {
+            rows.push([
+              `"${cust.id}"`,
+              `"${cust.name.replace(/"/g, '""')}"`,
+              `"${cust.phone}"`,
+              cust.points,
+              `"${tx.date}"`,
+              `"${tx.type}"`,
+              tx.amount || 0,
+              tx.points || 0,
+              tx.balance || 0
+            ]);
+          });
+        }
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Ganapathi_Cloth_Store_Ledger_${today}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('Member records downloaded as CSV!', 'success');
+    }
+
+    // Toast Notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-stone-900 text-white border border-boutique-gold/30';
+      let icon = '<i class="fa-solid fa-circle-info text-boutique-gold"></i>';
+
+      if (type === 'success') {
+        bg = 'bg-stone-900 text-white border border-emerald-500';
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      } else if (type === 'error') {
+        bg = 'bg-stone-900 text-white border border-rose-500';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-rose-400"></i>';
+      }
+
+      toast.className = `${bg} toast-animate px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-xs sm:text-sm font-medium pointer-events-auto max-w-md`;
+      toast.innerHTML = `
+        <span class="text-base">${icon}</span>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white/60 hover:text-white ml-2">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        if (toast && toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
